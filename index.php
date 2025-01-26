@@ -358,20 +358,64 @@ if (file_exists(__DIR__ . "/autoload.php")) {
        $post_user_name = $_POST["post_user_name"];
        $post_content = $_POST["post_content"];
 
-       // user photo upload 
-       move([
-           "tmp_name" => $_FILES["post_user_photo"]["tmp_name"],
-           "name" => $_FILES["post_user_photo"]["name"],
-       ], "media/user-photo/");
+
+       // form validation 
+       if (empty($post_user_name) || !$_FILES["post_user_photo"]["name"]) {
+            echo createAlert("Auth User Not Found!"); 
+       }else{
+            // user single photo upload 
+          $user_photo =  move([
+                "tmp_name" => $_FILES["post_user_photo"]["tmp_name"],
+                "name" => $_FILES["post_user_photo"]["name"],
+            ], "media/user-photo/");
 
 
-       // multiple photo upload 
-       for ($i=0; $i < count($_FILES["post_photos"]["name"]) ; $i++) { 
-         move([
-            "tmp_name" =>  $_FILES["post_photos"]["tmp_name"][$i],
-            "name" =>  $_FILES["post_photos"]["name"][$i],
-         ], "media/posts/");
-       }
+            // posts multiple photo upload 
+            $posts_photos = [];
+
+            if (!empty($_FILES["post_photos"]["name"][0])) {
+                for ($i=0; $i < count($_FILES["post_photos"]["name"]) ; $i++) { 
+                  $posts_photos_item =  move([
+                        "tmp_name" =>  $_FILES["post_photos"]["tmp_name"][$i],
+                        "name" =>  $_FILES["post_photos"]["name"][$i],
+                       ], "media/posts/");
+
+                array_push($posts_photos, $posts_photos_item); 
+                }
+            };
+     
+            // video upload 
+            $posts_video = null;
+
+            if ($_FILES["post_video"]["name"]) {
+                $posts_video =  move([
+                    "name" => $_FILES["post_video"]["name"],
+                    "tmp_name" => $_FILES["post_video"]["tmp_name"],
+                ], "media/videos/");
+            };
+
+
+            // now update database 
+            $posts = json_decode(file_get_contents("db/posts.json"), true); 
+
+            array_push($posts, [
+                "id"           => createId("posts"),
+                "user_name"    => $post_user_name,
+                "user_photo"   =>  $user_photo,
+                "posts_photos" => $posts_photos,
+                "posts_content"=> $post_content ? $post_content : null,
+                "posts_video"  => $posts_video,
+                "comments"     => [],
+                "likes"        => 0,
+                "share"        => 0,
+                "createdAt"    => time(),
+                "updatedAt"    => null,
+            ]); 
+
+
+            file_put_contents("db/posts.json", json_encode($posts));
+
+    }
 
     }
 
@@ -406,16 +450,33 @@ if (file_exists(__DIR__ . "/autoload.php")) {
                     </div>
                 </div>
 
+                <!-- show all user post  -->
+                <?php
+              
+              /**
+               * 
+               * get all posts and show 
+               */
+
+               $all_posts = array_reverse(json_decode(file_get_contents("db/posts.json"))); 
+
+               if (count($all_posts) > 0 ) : 
+
+                foreach($all_posts as $single_post) : 
+
+
+              ?>
+
                 <!-- User Post  -->
                 <div class="user-post">
                     <div class="user-post-header">
                         <div class="post-info">
-                            <img src="./assets/images/user.jpg"
+                            <img src="media/user-photo/<?php echo $single_post -> user_photo ?>"
                                 alt="" />
                             <div class="user-details">
                                 <a class="author"
-                                    href="#">Goutam Ray</a>
-                                <span>10m
+                                    href="#"><?php echo $single_post -> user_name ?></a>
+                                <span><?php echo timeAgo($single_post -> createdAt)?>
                                     <svg fill="currentColor"
                                         viewBox="0 0 16 16"
                                         width="1em"
@@ -459,16 +520,24 @@ if (file_exists(__DIR__ . "/autoload.php")) {
                     </div>
                     <div class="post-body">
                         <div class="post-content">
+                            <?php 
+                                if ($single_post-> posts_content): 
+                            ?>
                             <p>
-                                Lorem ipsum dolor sit amet consectetur, adipisicing elit.
-                                Impedit optio necessitatibus id nemo iste quod?
+                                <?php echo $single_post-> posts_content; ?>
                             </p>
+                            <?php 
+                                endif; 
+                            ?>
                         </div>
                     </div>
+                    <?php if($single_post-> posts_photos ) : ?>
+
                     <div class="post-media">
-                        <img src="https://embedsocial.com/wp-content/uploads/2020/10/add-links-instagram-posts.jpg"
+                        <img src="/media/posts/<?php echo $single_post-> posts_photos[0] ?>"
                             alt="" />
                     </div>
+                    <?php endif; ?>
                     <div class="post-comments">
                         <div class="comments-header">
                             <div class="reaction">
@@ -613,6 +682,17 @@ if (file_exists(__DIR__ . "/autoload.php")) {
 
                     </div>
                 </div>
+
+                <?php endforeach; ?>
+
+                <?php else : ?>
+                <div class="user-post">
+                    <div class="user-post-header text-center">
+                        <h4 class="text-center"> Posts Not Found </h4>
+                    </div>
+                </div>
+
+                <?php endif;  ?>
             </div>
         </div>
     </div>
@@ -664,6 +744,7 @@ if (file_exists(__DIR__ . "/autoload.php")) {
                             <label for="nam"> Video Content </label>
                             <input type="file"
                                 id="pic"
+                                accept="video/*"
                                 name="post_video"
                                 class="form-control">
                         </div>

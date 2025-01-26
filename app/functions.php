@@ -71,6 +71,49 @@ function createId($prefix = 'USER') {
   return strtoupper($cleanedId);
 }
 
+/**
+ * 
+ * Time age function 
+ */
+
+function timeAgo($fromTimestamp, $toTimestamp = null) {
+    // Use current time if $toTimestamp is not provided
+    $toTimestamp = $toTimestamp ?? time();
+
+    // Convert timestamps to DateTime objects
+    $from = (new DateTime())->setTimestamp($fromTimestamp);
+    $to = (new DateTime())->setTimestamp($toTimestamp);
+
+    // Calculate the difference
+    $diff = $from->diff($to);
+
+    // Build the output string
+    $parts = [];
+    if ($diff->y > 0) {
+        $parts[] = $diff->y . ' year' . ($diff->y > 1 ? 's' : '');
+    }
+    if ($diff->m > 0) {
+        $parts[] = $diff->m . ' month' . ($diff->m > 1 ? 's' : '');
+    }
+    if ($diff->d > 0) {
+        $parts[] = $diff->d . ' day' . ($diff->d > 1 ? 's' : '');
+    }
+    if ($diff->h > 0) {
+        $parts[] = $diff->h . ' hour' . ($diff->h > 1 ? 's' : '');
+    }
+    if ($diff->i > 0) {
+        $parts[] = $diff->i . ' minute' . ($diff->i > 1 ? 's' : '');
+    }
+    if ($diff->s > 0) {
+        $parts[] = $diff->s . ' second' . ($diff->s > 1 ? 's' : '');
+    }
+
+    // Join parts or return "just now" if no difference
+    return $parts ? implode(', ', $parts) : 'just now';
+}
+
+
+
 
 
 ?>
