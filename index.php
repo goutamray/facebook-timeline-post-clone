@@ -6,6 +6,29 @@ if (file_exists(__DIR__ . "/autoload.php")) {
   include_once __DIR__ . "/autoload.php";
 }
 
+// get url data 
+if (isset($_GET["likeId"])) {
+   $likeUrlId = $_GET["likeId"];
+
+   $databaseOldData = json_decode(file_get_contents("db/posts.json"), true); 
+
+   $likeUpdate = [];
+
+   foreach($databaseOldData as $likeItem){
+    if ($likeItem["id"] == $likeUrlId) {
+        $likeItem["likes"] = $likeItem["likes"] + 1; 
+    }
+
+    array_push($likeUpdate, $likeItem); 
+   }
+
+  file_put_contents("db/posts.json", json_encode($likeUpdate)); 
+
+  header("/");
+}
+
+
+
 ?>
 
 
@@ -574,15 +597,15 @@ if (file_exists(__DIR__ . "/autoload.php")) {
 
                     <?php endif; ?>
 
+
+                    <!-- post video  -->
                     <?php if($single_post-> posts_video)  : ?>
                     <div class="post-video">
                         <video controls>
                             <source src="/media/videos/<?php echo $single_post-> posts_video ?>"">
-                         </video>
-                   </div>
+                            </video>
+                    </div>
                     <?php endif; ?>
-
-
 
                     <div class="
                                 post-comments">
@@ -696,22 +719,26 @@ if (file_exists(__DIR__ . "/autoload.php")) {
                                             </li>
                                         </ul>
                                     </div>
-                                    <a href="#">Kajal Datta, Sufia Sepu and 550 others</a>
+                                    <a href="#"><?php echo $single_post-> likes ?> likes </a>
                                 </div>
                                 <div class="counts">
-                                    <a href="#">95 Comments</a>
+                                    <a href="#"><?php echo count($single_post-> comments) ?> Comments</a>
                                 </div>
                             </div>
                             <div class="divider-0"></div>
                             <div class="comments-menu">
                                 <ul>
                                     <li>
-                                        <span class="comment-icon"></span>
-                                        <span>Like</span>
+                                        <a href="?likeId=<?php echo $single_post-> id ?>"
+                                            class="d-flex gap-1 align-items-center">
+                                            <span class="comment-icon"></span>
+                                            Like</a>
                                     </li>
 
-                                    <li data-bs-toggle="modal"
-                                        data-bs-target="#create_comment_modal">
+                                    <li id="comment_click"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#create_comment_modal"
+                                        commentId="<?php echo $single_post-> id ?>">
                                         <span class="comment-icon"></span>
                                         <span> Comment</span>
                                     </li>
@@ -807,6 +834,29 @@ if (file_exists(__DIR__ . "/autoload.php")) {
         </div>
     </div>
 
+    <?php
+
+/**
+ * 
+ * post comment manage 
+ */
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["comment-submit"] == "Comment") {
+
+
+    // get form values 
+   echo $comment_Id = $_POST["comment_id"]; 
+   echo $comment_user = $_POST["comment_user_name"]; 
+   echo  $comment_content = $_POST["comment_content"]; 
+
+
+}
+
+
+
+?>
+
+
 
     <!-- create comment modal  start  -->
     <div class="modal fade"
@@ -815,24 +865,36 @@ if (file_exists(__DIR__ . "/autoload.php")) {
             <div class="modal-content">
                 <div class="modal-body">
                     <h3 class="text-center"> Create Comment </h3>
-                    <form action="">
+                    <form action=""
+                        method="Post"
+                        enctype="multipart/form-data">
                         <div class="my-2">
                             <label for="nam"> Auth User Name </label>
                             <input type="text"
                                 id="nam"
                                 class="form-control"
-                                placeholder="Name">
+                                placeholder="Name"
+                                name="comment_user_name">
                         </div>
                         <div class="my-2">
                             <label for="pic"> Auth User Photo </label>
                             <input type="file"
                                 id="pic"
                                 name="photo"
-                                class="form-control">
+                                class="form-control"
+                                name="comment_user_photo">
+                        </div>
+                        <div class="my-2">
+
+                            <input type="hidden"
+                                id="comment_id"
+                                class="form-control"
+                                placeholder="Id"
+                                name="comment_id">
                         </div>
                         <div class="my-2">
                             <label for="pic"> Comment Content </label>
-                            <textarea name=""
+                            <textarea name="comment_content"
                                 class="form-control"
                                 id=""></textarea>
                         </div>
@@ -840,12 +902,13 @@ if (file_exists(__DIR__ . "/autoload.php")) {
                             <label for="pic"> Comment Photo </label>
                             <input type="file"
                                 id="pic"
-                                name="photo"
+                                name="comment_photo"
                                 class="form-control">
                         </div>
                         <div class="my-2">
                             <input type="submit"
-                                value="Submit"
+                                name="comment-submit"
+                                value="Comment"
                                 class="btn btn-sm btn-primary">
                         </div>
                     </form>
@@ -861,6 +924,20 @@ if (file_exists(__DIR__ . "/autoload.php")) {
 
     <!-- main css  -->
     <script src="./assets/js/main.js"></script>
+
+
+    <script>
+    const liElements = document.querySelectorAll("[data-bs-target='#create_comment_modal']");
+    const InputComId = document.getElementById("comment_id");
+
+    liElements.forEach((li) => {
+        li.onclick = () => {
+            const CommentLiId = li.getAttribute("commentId");
+
+            InputComId.value = CommentLiId;
+        };
+    });
+    </script>
 </body>
 
 </html>
