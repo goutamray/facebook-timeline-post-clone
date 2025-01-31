@@ -845,10 +845,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["comment-submit"] == "Comment
 
 
     // get form values 
-   echo $comment_Id = $_POST["comment_id"]; 
-   echo $comment_user = $_POST["comment_user_name"]; 
-   echo  $comment_content = $_POST["comment_content"]; 
+    $comment_Id = $_POST["comment_id"]; 
+    $comment_user = $_POST["comment_user_name"]; 
+    $comment_content = $_POST["comment_content"]; 
 
+    // upload comment user photo
+   $user_photo_name = move([
+        "tmp_name" => $_FILES["comment_user_photo"]["tmp_name"],
+        "name" => $_FILES["comment_user_photo"]["name"],
+    ], "media/user-photo/");
+
+
+  // comment photo upload only  
+   if (!empty( $_FILES["comment_photo"]["name"])) {
+   $comment_photo_link = move([
+        "tmp_name" => $_FILES["comment_photo"]["tmp_name"],
+        "name" => $_FILES["comment_photo"]["name"],
+    ], "media/comments/");
+   }
+
+   // update comment 
+   $commentData = json_decode(file_get_contents("db/posts.json"), true);
+
+  $comment_update = []; 
+
+   foreach($commentData as $commentItem){
+      if ($commentItem["id"] == $comment_Id ) {
+          array_push($commentItem["comments"], [
+            "id"              => createId("comment"),
+            "user"            => $comment_user,
+            "user-photo"      => $user_photo_name,
+            "comment-photo"   => $comment_photo_link ? $comment_photo_link : null,
+            "comment-content" => $comment_content ? $comment_content  : null,    
+          ]);
+      }
+
+      array_push($comment_update, $commentItem); 
+   }
+
+
+   file_put_contents("db/posts.json", json_encode($comment_update)); 
 
 }
 
@@ -880,7 +916,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["comment-submit"] == "Comment
                             <label for="pic"> Auth User Photo </label>
                             <input type="file"
                                 id="pic"
-                                name="photo"
                                 class="form-control"
                                 name="comment_user_photo">
                         </div>
