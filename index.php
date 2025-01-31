@@ -24,7 +24,7 @@ if (isset($_GET["likeId"])) {
 
   file_put_contents("db/posts.json", json_encode($likeUpdate)); 
 
-  header("/");
+  header("location:index.php");
 }
 
 
@@ -368,6 +368,67 @@ if (isset($_GET["likeId"])) {
                     </div>
                 </div>
 
+                <?php
+
+/**
+ * 
+ * post comment manage 
+ */
+
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["comment-submit"])) {
+
+
+    // get form values 
+    $comment_Id = $_POST["comment_id"]; 
+    $comment_user = $_POST["comment_user_name"]; 
+    $comment_content = $_POST["comment_content"]; 
+
+    // upload comment user photo
+   $user_photo_name = move([
+        "tmp_name" => $_FILES["comment_user_photo"]["tmp_name"],
+        "name" => $_FILES["comment_user_photo"]["name"],
+    ], "media/user-photo/");
+
+
+  // comment photo upload only  
+  $comment_photo_link = null;
+
+   if (!empty( $_FILES["comment_photo"]["name"])) {
+   $comment_photo_link = move([
+        "tmp_name" => $_FILES["comment_photo"]["tmp_name"],
+        "name" => $_FILES["comment_photo"]["name"],
+    ], "media/comments/");
+   }
+
+   // update comment 
+   $commentData = json_decode(file_get_contents("db/posts.json"), true);
+
+  $comment_update = []; 
+
+   foreach($commentData as $commentItem){
+      if ($commentItem["id"] == $comment_Id ) {
+          array_push($commentItem["comments"], [
+            "id"              => createId("comment"),
+            "user"            => $comment_user,
+            "user_photo"      => $user_photo_name,
+            "comment_photo"   => $comment_photo_link ? $comment_photo_link  : null,
+            "comment_content" => $comment_content ? $comment_content  : null,    
+          ]);
+      }
+
+      array_push($comment_update, $commentItem); 
+   }
+
+
+   file_put_contents("db/posts.json", json_encode($comment_update)); 
+
+
+
+}
+
+?>
+
+
 
                 <?php
 
@@ -376,7 +437,7 @@ if (isset($_GET["likeId"])) {
  * create user post 
  */
 
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["post_submit"] == "Post") {
+    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["post_submit"])) {
       // get form data 
        $post_user_name = $_POST["post_user_name"];
        $post_content = $_POST["post_content"];
@@ -437,6 +498,9 @@ if (isset($_GET["likeId"])) {
 
 
             file_put_contents("db/posts.json", json_encode($posts));
+
+
+
 
     }
 
@@ -753,7 +817,22 @@ if (isset($_GET["likeId"])) {
                             <div class="comments-area"></div>
                     </div>
                     <div class="post-comment-area">
-
+                        <?php foreach($single_post-> comments as $comment ) : ?>
+                        <div class="single-comment-item">
+                            <div class="main-part-comment">
+                                <img src="media/user-photo/<?php echo $comment -> user_photo ?>"
+                                    alt="">
+                                <div class="comment-content">
+                                    <p><?php echo $comment -> user ?></p>
+                                    <p><?php echo $comment -> comment_content ?> </p>
+                                    <div class="comment-photo">
+                                        <img src="media/comments/<?php echo $comment -> comment_photo ?>"
+                                            alt="">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
@@ -834,63 +913,7 @@ if (isset($_GET["likeId"])) {
         </div>
     </div>
 
-    <?php
 
-/**
- * 
- * post comment manage 
- */
-
-if ($_SERVER["REQUEST_METHOD"] == "POST" && $_POST["comment-submit"] == "Comment") {
-
-
-    // get form values 
-    $comment_Id = $_POST["comment_id"]; 
-    $comment_user = $_POST["comment_user_name"]; 
-    $comment_content = $_POST["comment_content"]; 
-
-    // upload comment user photo
-   $user_photo_name = move([
-        "tmp_name" => $_FILES["comment_user_photo"]["tmp_name"],
-        "name" => $_FILES["comment_user_photo"]["name"],
-    ], "media/user-photo/");
-
-
-  // comment photo upload only  
-   if (!empty( $_FILES["comment_photo"]["name"])) {
-   $comment_photo_link = move([
-        "tmp_name" => $_FILES["comment_photo"]["tmp_name"],
-        "name" => $_FILES["comment_photo"]["name"],
-    ], "media/comments/");
-   }
-
-   // update comment 
-   $commentData = json_decode(file_get_contents("db/posts.json"), true);
-
-  $comment_update = []; 
-
-   foreach($commentData as $commentItem){
-      if ($commentItem["id"] == $comment_Id ) {
-          array_push($commentItem["comments"], [
-            "id"              => createId("comment"),
-            "user"            => $comment_user,
-            "user-photo"      => $user_photo_name,
-            "comment-photo"   => $comment_photo_link ? $comment_photo_link : null,
-            "comment-content" => $comment_content ? $comment_content  : null,    
-          ]);
-      }
-
-      array_push($comment_update, $commentItem); 
-   }
-
-
-   file_put_contents("db/posts.json", json_encode($comment_update)); 
-
-}
-
-
-
-?>
 
 
 
